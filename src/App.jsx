@@ -9,10 +9,9 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Users, Trophy, Settings, Lock, Trash2, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { SHARED_REF } from "./firestoreConfig";
+import { doc, onSnapshot, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"; // ⬅ getDoc/setDoc/updateDoc MÅ vere her
+getDoc/setDoc/updateDoc MÅ vere her
 import { db } from "./firebase";
 
 import MatchesAdmin from "./MatchesAdmin";
@@ -23,7 +22,7 @@ import {
   SHARED_REF
 } from "./firestoreConfig";
 
-import { db } from "./firebase"; // om du brukar db vidare i fila
+
 
 
 // ---- Konfig ----
