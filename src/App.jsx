@@ -42,9 +42,6 @@ const ALL_TEAMS = [...STAGE_TEAMS[1], ...STAGE_TEAMS[2], ...STAGE_TEAMS[3]];
 //                      ^^^^^^^^^^^^^^^^^^^^^^^  pass på at useState er importert
 
 // ...inne i App-komponenten, nær dei andre state-variablane:
-const [teamDirty, setTeamDirty] = useState(false);
-const [saveStatus, setSaveStatus] = useState("");   //  ⬅⬅ denne mangla
-
 function useLocalStorage(key, init) {
   const [v, setV] = useState(() => {
     try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; }
