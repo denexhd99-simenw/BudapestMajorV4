@@ -12,9 +12,7 @@ import './firebaseHelpers.js';
 
 
 function Root() {
-  useEffect(() => {
-    import('./firebase.client').then(mod => mod.initFirebaseClient()).catch(e => console.error("Init firebase failed", e));
-  }, []);
+  
 
   return <App />;
 }
