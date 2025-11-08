@@ -40,7 +40,6 @@ const STAGE_TEAMS = {
 const ALL_TEAMS = [...STAGE_TEAMS[1], ...STAGE_TEAMS[2], ...STAGE_TEAMS[3]];
 
 // ---- Helpers ----
-import React, { useEffect, useMemo, useState } from "react";
 //                      ^^^^^^^^^^^^^^^^^^^^^^^  pass på at useState er importert
 
 // ...inne i App-komponenten, nær dei andre state-variablane:
