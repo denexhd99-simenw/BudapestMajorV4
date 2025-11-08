@@ -75,32 +75,34 @@ const DEFAULT_BONUS_RULES = [
   {id:"perfect_run",   navn:"Perfekt run (ingen tap)",   poeng:3,  type:"toggle"},
   {id:"player_injured",navn:"Spelar skadet",             poeng:-3, type:"counter"},
 ];
-
-// ---------- App ----------
 export default function App() {
+  // tabs
   const [tab, setTab] = useState("pick");
-
 
   // picks & form state
   const [name, setName] = useLocalStorage("name", "");
   const [picks, setPicks] = useLocalStorage("picks", []);
-  const [s1, setS1] = useState(""); const [s2, setS2] = useState(""); const [s3, setS3] = useState("");
+  const [s1, setS1] = useState("");
+  const [s2, setS2] = useState("");
+  const [s3, setS3] = useState("");
 
   // admin auth
   const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem("isAdmin") === "1");
 
-  // rules (synced)
+  // team state (synced)
+  const [teamState, setTeamState] = useLocalStorage(
+    "teamState",
+    Object.fromEntries(ALL_TEAMS.map(t => [t, { base:{}, bonus:{} }]))
+  );
+
+ // rules (synced)
   const [baseRules, setBaseRules]   = useLocalStorage("baseRules", DEFAULT_BASE_RULES);
   const [bonusRules, setBonusRules] = useLocalStorage("bonusRules", DEFAULT_BONUS_RULES);
   const [bonusActive, setBonusActive] = useLocalStorage("bonusActive", true);
 
-  // team state (synced)
-  const [teamState, setTeamState] = useLocalStorage("teamState",
-    Object.fromEntries(ALL_TEAMS.map(t => [t, { base:{}, bonus:{} }]))
-  );
-const [teamDirty, setTeamDirty] = useState(false);
-const [saveStatus, setSaveStatus] = useState("");
 
+  const [teamDirty, setTeamDirty] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
 
   const baseColsArr = baseRules;
   const bonusColsArr = bonusRules;
