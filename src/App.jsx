@@ -80,8 +80,7 @@ const DEFAULT_BONUS_RULES = [
 // ---------- App ----------
 export default function App() {
   const [tab, setTab] = useState("pick");
-const [teamDirty, setTeamDirty] = useState(false);
-const [saveStatus, setSaveStatus] = useState("");
+
 
   // picks & form state
   const [name, setName] = useLocalStorage("name", "");
