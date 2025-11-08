@@ -698,7 +698,7 @@ function AdminTab({
               <span>Bonus aktiv?</span>
             </div>
             <div className="flex items-center gap-2">
-  <span className="text-xs opacity-70">{saveStatus}</span>
+  
   <Button
     onClick={async () => {
       try {
@@ -717,7 +717,7 @@ function AdminTab({
   <Button onClick={resetAll} className="bg-secondary text-secondary-foreground">Tilbakestill</Button>
 </div>
 <div>
-<span className="text-xs opacity-70">{saveStatus}</span>
+
 <Button
   onClick={async () => {
     try {

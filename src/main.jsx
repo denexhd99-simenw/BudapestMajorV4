@@ -11,13 +11,6 @@ import './firebaseHelpers.js';
 // removed legacy: bindUI
 
 
-function Root() {
-  
-
-  return <App />;
-}
-
 createRoot(document.getElementById('root')).render(<App />);
-// kall after mount
 // removed legacy: startLiveData()
 // removed legacy: bindUI config block
