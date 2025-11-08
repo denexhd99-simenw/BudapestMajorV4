@@ -10,16 +10,15 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Users, Trophy, Settings, Lock, Trash2, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
-import { doc, onSnapshot, getDoc, updateDoc, setDoc } from "firebase/firestore";
-import { db } from "./firebase";
-
 import MatchesAdmin from "./MatchesAdmin";
 import {
   getRulesOnce, writeRules, subscribeRules,
-  getTeamStateOnce, subscribeTeamState, writeTeamState,  // ⬅ sørg for at writeTeamState er med
+  getTeamStateOnce, subscribeTeamState, writeTeamState,
   getSharedOnce, writeShared, subscribeShared,
   SHARED_REF
 } from "./firestoreConfig";
+import { db } from "./firebase"; // om du brukar db vidare i fila
+
 
 // ---- Konfig ----
 const ADMIN_PASSWORD = "budapest2025";
