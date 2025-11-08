@@ -9,6 +9,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Users, Trophy, Settings, Lock, Trash2, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { SHARED_REF } from "./firestoreConfig";
 
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"; // ⬅ getDoc/setDoc/updateDoc MÅ vere her
 import { db } from "./firebase";
