@@ -1,5 +1,5 @@
 // src/main.jsx
-import React, { useEffect } from 'react'
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css';
@@ -17,7 +17,7 @@ function Root() {
   return <App />;
 }
 
-createRoot(document.getElementById('root')).render(<Root />);
+createRoot(document.getElementById('root')).render(<App />);
 // kall after mount
 // removed legacy: startLiveData()
 // removed legacy: bindUI config block

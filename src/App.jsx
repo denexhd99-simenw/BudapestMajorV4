@@ -10,6 +10,9 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Users, Trophy, Settings, Lock, Trash2, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"; // ⬅ getDoc/setDoc/updateDoc MÅ vere her
+import { db } from "./firebase";
+
 import MatchesAdmin from "./MatchesAdmin";
 import {
   getRulesOnce, writeRules, subscribeRules,
@@ -17,6 +20,7 @@ import {
   getSharedOnce, writeShared, subscribeShared,
   SHARED_REF
 } from "./firestoreConfig";
+
 import { db } from "./firebase"; // om du brukar db vidare i fila
 
 
@@ -95,8 +99,9 @@ export default function App() {
   const [teamState, setTeamState] = useLocalStorage("teamState",
     Object.fromEntries(ALL_TEAMS.map(t => [t, { base:{}, bonus:{} }]))
   );
-  const [teamDirty, setTeamDirty] = useState(false);
-  const [saveStatus, setSaveStatus] = useState("");
+const [teamDirty, setTeamDirty] = useState(false);
+const [saveStatus, setSaveStatus] = useState("");
+
 
   const baseColsArr = baseRules;
   const bonusColsArr = bonusRules;
@@ -276,27 +281,31 @@ export default function App() {
   }, [picks, teamPoints]);
 
   // ---------- Firestore helpers for shared users ----------
-  async function addOrUpdateUserFirestore(player) {
-    try {
-      const snap = await getDoc(SHARED_REF);
-      const data = snap.exists() ? snap.data() : { users: [] };
-      const users = Array.isArray(data.users) ? data.users : [];
-      const existingIndex = users.findIndex(u => u.name === player.name);
-      const userObj = {
-        id: (existingIndex !== -1 && users[existingIndex].id) ? users[existingIndex].id : Date.now().toString(),
-        name: player.name,
-        stageTeams: [player.s1, player.s2, player.s3].filter(Boolean),
-        score: (users[existingIndex]?.score ?? 0),
-        createdAt: existingIndex !== -1 ? users[existingIndex].createdAt : Date.now()
-      };
-      if (existingIndex !== -1) users[existingIndex] = userObj; else users.push(userObj);
-      if (!snap.exists()) await setDoc(SHARED_REF, { users, lastUpdated: Date.now() });
-      else await updateDoc(SHARED_REF, { users, lastUpdated: Date.now() });
-    } catch (err) {
-      console.error("addOrUpdateUserFirestore error:", err);
-      throw err;
-    }
+async function addOrUpdateUserFirestore(player) {
+  try {
+    const snap = await getDoc(SHARED_REF);
+    const data = snap.exists() ? snap.data() : { users: [] };
+    const users = Array.isArray(data.users) ? data.users : [];
+
+    const existingIndex = users.findIndex(u => u.name === player.name);
+    const userObj = {
+      id: (existingIndex !== -1 && users[existingIndex].id) ? users[existingIndex].id : Date.now().toString(),
+      name: player.name,
+      stageTeams: [player.s1, player.s2, player.s3].filter(Boolean),
+      score: (users[existingIndex]?.score ?? 0),
+      createdAt: existingIndex !== -1 ? users[existingIndex].createdAt : Date.now()
+    };
+
+    if (existingIndex !== -1) users[existingIndex] = userObj; else users.push(userObj);
+
+    if (!snap.exists()) await setDoc(SHARED_REF, { users, lastUpdated: Date.now() });
+    else await updateDoc(SHARED_REF, { users, lastUpdated: Date.now() });
+  } catch (err) {
+    console.error("addOrUpdateUserFirestore error:", err);
+    throw err;
   }
+}
+
 
   async function removeUserFromFirestoreByName(nameToRemove) {
     try {
@@ -688,11 +697,25 @@ function AdminTab({
               <span>Bonus aktiv?</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs opacity-70">{saveStatus}</span>
-              <Button onClick={async()=>{ try { setSaveStatus("Lagrar…"); await writeTeamState({ teams: teamState, updatedAt: Date.now() }); setSaveStatus("Lagra"); setTimeout(()=>setSaveStatus(""), 1000);} catch(e){ setSaveStatus("Feil ved lagring"); } }}>
-                Lagre no
-              </Button>
-              <Button onClick={resetAll} className="bg-secondary text-secondary-foreground">Tilbakestill</Button>
+  <span className="text-xs opacity-70">{saveStatus}</span>
+  <Button
+    onClick={async () => {
+      try {
+        setSaveStatus("Lagrar…");
+        await writeTeamState({ teams: teamState, updatedAt: Date.now() });
+        setSaveStatus("Lagra");
+        setTeamDirty(false);
+        setTimeout(() => setSaveStatus(""), 1000);
+      } catch {
+        setSaveStatus("Feil ved lagring");
+      }
+    }}
+  >
+    Lagre no
+  </Button>
+  <Button onClick={resetAll} className="bg-secondary text-secondary-foreground">Tilbakestill</Button>
+</div>
+<div>
 <span className="text-xs opacity-70">{saveStatus}</span>
 <Button
   onClick={async () => {
