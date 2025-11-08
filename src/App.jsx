@@ -226,23 +226,24 @@ export default function App() {
   }, []);
 
   // Auto-save: whenever admin changes teamState, debounce and write to Firestore
-  useEffect(() => {
-    if (!isAdmin) return;
-    if (!teamDirty) return;
-    const t = setTimeout(async () => {
-      try {
-        setSaveStatus("Lagrar…");
-        await writeTeamState({ teams: teamState, updatedAt: Date.now() });
-        setSaveStatus("Lagra");
-        setTeamDirty(false);
-        setTimeout(() => setSaveStatus(""), 1000);
-      } catch (e) {
-        console.error("writeTeamState error", e);
-        setSaveStatus("Feil ved lagring");
-      }
-    }, 400);
-    return () => clearTimeout(t);
-  }, [teamState, teamDirty, isAdmin]);
+ useEffect(() => {
+  if (!isAdmin) return;
+  if (!teamDirty) return;
+  const t = setTimeout(async () => {
+    try {
+      setSaveStatus("Lagrar…");
+      await writeTeamState({ teams: teamState, updatedAt: Date.now() });
+      setSaveStatus("Lagra");
+      setTeamDirty(false);
+      setTimeout(() => setSaveStatus(""), 1000);
+    } catch (e) {
+      console.error("writeTeamState error", e);
+      setSaveStatus("Feil ved lagring");
+    }
+  }, 400);
+  return () => clearTimeout(t);
+}, [teamState, teamDirty, isAdmin]);
+
 
 
   // compute points
@@ -335,7 +336,7 @@ export default function App() {
     }
   }
 
-  function setTeamBase(team, ruleId, value) {
+function setTeamBase(team, ruleId, value) {
   setTeamState(s => ({
     ...s,
     [team]: {
@@ -343,7 +344,7 @@ export default function App() {
       base: { ...((s[team]?.base) || {}), [ruleId]: value }
     }
   }));
-  setTeamDirty(true);     // ⬅
+  setTeamDirty(true);
 }
 
 function setTeamBonus(team, ruleId, value) {
@@ -354,7 +355,7 @@ function setTeamBonus(team, ruleId, value) {
       bonus: { ...((s[team]?.bonus) || {}), [ruleId]: value }
     }
   }));
-  setTeamDirty(true);     // ⬅
+  setTeamDirty(true);
 }
 
 
