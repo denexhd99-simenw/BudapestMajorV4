@@ -16,7 +16,7 @@ import { db } from "./firebase";
 import MatchesAdmin from "./MatchesAdmin";
 import {
   getRulesOnce, writeRules, subscribeRules,
-  getTeamStateOnce, subscribeTeamState, writeTeamState,
+  getTeamStateOnce, subscribeTeamState, writeTeamState,  // ⬅ sørg for at writeTeamState er med
   getSharedOnce, writeShared, subscribeShared,
   SHARED_REF
 } from "./firestoreConfig";
@@ -40,6 +40,13 @@ const STAGE_TEAMS = {
 const ALL_TEAMS = [...STAGE_TEAMS[1], ...STAGE_TEAMS[2], ...STAGE_TEAMS[3]];
 
 // ---- Helpers ----
+import React, { useEffect, useMemo, useState } from "react";
+//                      ^^^^^^^^^^^^^^^^^^^^^^^  pass på at useState er importert
+
+// ...inne i App-komponenten, nær dei andre state-variablane:
+const [teamDirty, setTeamDirty] = useState(false);
+const [saveStatus, setSaveStatus] = useState("");   //  ⬅⬅ denne mangla
+
 function useLocalStorage(key, init) {
   const [v, setV] = useState(() => {
     try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; }
@@ -330,11 +337,27 @@ export default function App() {
   }
 
   function setTeamBase(team, ruleId, value) {
-    setTeamState(s => ({ ...s, [team]: { ...(s[team]||{base:{},bonus:{}}), base:{...((s[team]?.base)||{}), [ruleId]: value} } }));
-  }
-  function setTeamBonus(team, ruleId, value) {
-    setTeamState(s => ({ ...s, [team]: { ...(s[team]||{base:{},bonus:{}}), bonus:{...((s[team]?.bonus)||{}), [ruleId]: value} } }));
-  }
+  setTeamState(s => ({
+    ...s,
+    [team]: {
+      ...(s[team] || { base:{}, bonus:{} }),
+      base: { ...((s[team]?.base) || {}), [ruleId]: value }
+    }
+  }));
+  setTeamDirty(true);     // ⬅
+}
+
+function setTeamBonus(team, ruleId, value) {
+  setTeamState(s => ({
+    ...s,
+    [team]: {
+      ...(s[team] || { base:{}, bonus:{} }),
+      bonus: { ...((s[team]?.bonus) || {}), [ruleId]: value }
+    }
+  }));
+  setTeamDirty(true);     // ⬅
+}
+
 
   return (
     <div className="min-h-screen bg-[#0e1625] text-foreground">
@@ -673,6 +696,23 @@ function AdminTab({
                 Lagre no
               </Button>
               <Button onClick={resetAll} className="bg-secondary text-secondary-foreground">Tilbakestill</Button>
+<span className="text-xs opacity-70">{saveStatus}</span>
+<Button
+  onClick={async () => {
+    try {
+      setSaveStatus("Lagrar…");
+      await writeTeamState({ teams: teamState, updatedAt: Date.now() });
+      setSaveStatus("Lagra");
+      setTeamDirty(false);
+      setTimeout(() => setSaveStatus(""), 1000);
+    } catch {
+      setSaveStatus("Feil ved lagring");
+    }
+  }}
+>
+  Lagre no
+</Button>
+
             </div>
           </div>
 
