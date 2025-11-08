@@ -10,8 +10,6 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Users, Trophy, Settings, Lock, Trash2, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { doc, onSnapshot, getDoc, setDoc, updateDoc } from "firebase/firestore";
-
-getDoc/setDoc/updateDoc MÅ vere her
 import { db } from "./firebase";
 
 import MatchesAdmin from "./MatchesAdmin";
