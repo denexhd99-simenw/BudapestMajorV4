@@ -1,4 +1,21 @@
-// src/App.jsx
+/
+  async function setPlayerBonus(playerName, ruleId, value) {
+    try {
+      const snap = await getDoc(SHARED_REF);
+      const data = snap.exists() ? snap.data() : { users: [] };
+      const users = Array.isArray(data.users) ? data.users : [];
+      const idx = users.findIndex(u => u.name === playerName);
+      if (idx === -1) { console.warn("Fant ikkje bruker:", playerName); return; }
+      const user = users[idx];
+      const newBonus = { ...(user.bonus || {}) };
+      if (value === null || value === undefined || value === "") delete newBonus[ruleId];
+      else newBonus[ruleId] = value;
+      users[idx] = { ...user, bonus: newBonus };
+      await updateDoc(SHARED_REF, { users, lastUpdated: Date.now() });
+    } catch (e) { console.error("setPlayerBonus feil:", e); alert("Feil ved lagring av bonus - sjekk konsoll."); }
+  }
+
+/ src/App.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -75,6 +92,14 @@ const DEFAULT_BONUS_RULES = [
   {id:"perfect_run",   navn:"Perfekt run (ingen tap)",   poeng:3,  type:"toggle"},
   {id:"player_injured",navn:"Spelar skadet",             poeng:-3, type:"counter"},
 ];
+<<<<<<< HEAD
+export default function App() {
+ 
+  // match-local rule values (for admin match form)
+  const matchRuleValues = {};
+ // tabs
+  const [tab, setTab] = useState("pick");
+=======
 
 function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
   return (
@@ -133,6 +158,7 @@ function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
 export default function App() {
   // tabs
   const [tab, setTab] = useLocalStorage("activeTab", "intro");
+>>>>>>> 1b56a10b487910c1165a4976570c3a4216552063
 
   // picks & form state
   const [name, setName] = useLocalStorage("name", "");
@@ -375,33 +401,7 @@ async function addOrUpdateUserFirestore(player) {
 }
 
 
-  
-  async function setPlayerBonus(playerName, ruleId, value) {
-    try {
-      const snap = await getDoc(SHARED_REF);
-      const data = snap.exists() ? snap.data() : { users: [] };
-      const users = Array.isArray(data.users) ? data.users : [];
-      const idx = users.findIndex(u => u.name === playerName);
-      if (idx === -1) {
-        console.warn("Fant ikkje bruker:", playerName);
-        return;
-      }
-      const user = users[idx];
-      const newBonus = { ...(user.bonus || {}) };
-      if (value === null || value === undefined || value === "") {
-        delete newBonus[ruleId];
-      } else {
-        newBonus[ruleId] = value;
-      }
-      users[idx] = { ...user, bonus: newBonus };
-      await updateDoc(SHARED_REF, { users, lastUpdated: Date.now() });
-    } catch (e) {
-      console.error("setPlayerBonus feil:", e);
-      alert("Feil ved lagring av bonus - sjekk konsoll.");
-    }
-  }
-
-async function removeUserFromFirestoreByName(nameToRemove) {
+  async function removeUserFromFirestoreByName(nameToRemove) {
     try {
       const snap = await getDoc(SHARED_REF);
       if (!snap.exists()) return;
@@ -486,9 +486,42 @@ function setTeamBonus(team, ruleId, value) {
 
             <TabsContent value="leaderboard"><LeaderboardTab rows={rows} /></TabsContent>
 
-            <TabsContent value="intro">
-              <IntroTab baseRules={baseRules} bonusRules={bonusRules} />
-            </TabsContent>
+            
+<TabsContent value="intro">
+  <Card className="mt-4">
+    <CardHeader><CardTitle>Velkommen!</CardTitle></CardHeader>
+    <CardContent>
+      <FriendlyIntro baseRules={baseRules} bonusRules={bonusRules} onStart={() => setTab("pick")} />
+      <div className="mt-6 rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
+        <h3 className="text-lg font-semibold mb-2">Poengoversikt</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-4 rounded-md bg-[#0b1a2a]">
+            <h4 className="font-semibold mb-2">Grunnreglar</h4>
+            <ul className="list-disc ml-5 space-y-1">
+              {Array.from([...(baseRules||[]), ...(bonusRules||[])].filter(Boolean)).map(r => (
+                <li key={r.id}><b>{r.navn}</b>{' '}<span className="opacity-80">{r.type === 'counter' ? `(+${r.poeng} poeng kvar gong)` : `(+${r.poeng} poeng når dette er på)`}</span></li>
+              ))}
+            </ul>
+          </div>
+          <div className="p-4 rounded-md bg-[#0b1a2a]">
+            <h4 className="font-semibold mb-2">Bonusreglar</h4>
+            <p className="opacity-80">Kun éi aktiv bonusregel for personlege straffar:</p>
+            <ul className="list-disc ml-5">
+              { (bonusRules||[]).filter(b=>b.namn==='spybot' || b.navn==='spybot' || b.navn && b.navn.toLowerCase().includes('spybot')).length === 0 ? (
+                <li>Spybot — <b>-3 poeng</b> (Teller)</li>
+              ) : (
+                (bonusRules||[]).filter(b=>b.navn && b.navn.toLowerCase().includes('spybot')).map(b=>(
+                  <li key={b.id}><b>{b.navn}</b> — <b>{b.poeng}</b> poeng ({b.type === 'counter' ? 'Teller' : 'Av/På'})</li>
+                ))
+              )}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+</TabsContent>
+
 
             <TabsContent value="admin">
               {!isAdmin ? (
@@ -1038,8 +1071,12 @@ function AdminTab({
                 <TableHead>Stage 1</TableHead>
                 <TableHead>Stage 2</TableHead>
                 <TableHead>Stage 3</TableHead>
+<<<<<<< HEAD
+                <TableHead className="text-right">Slett</TableHead>\n                {bonusRules.map(br => (<TableHead key={br.id}>{br.navn}{br.type === "counter" ? " (#)" : ""}</TableHead>))}
+=======
                 <TableHead className="text-right">Slett</TableHead>
                 {bonusRules.map(br => (<TableHead key={br.id}>{br.navn}{br.type === "counter" ? " (#)" : ""}</TableHead>))}
+>>>>>>> 1b56a10b487910c1165a4976570c3a4216552063
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1049,7 +1086,16 @@ function AdminTab({
                   <TableCell>{p.s1}</TableCell>
                   <TableCell>{p.s2}</TableCell>
                   <TableCell>{p.s3}</TableCell>
-                  <TableCell className="text-right">
+                  {bonusRules.map(br => (
+                    <TableCell key={br.id}>
+                      {br.type === 'counter' ? (
+                        <Input type="number" className="w-20" value={p.bonus?.[br.id] ?? 0} onChange={async (e) => { const v = Number(e.target.value||0); await setPlayerBonus(p.name, br.id, v); }} />
+                      ) : (
+                        <input type="checkbox" checked={!!p.bonus?.[br.id]} onChange={async (e) => { await setPlayerBonus(p.name, br.id, e.target.checked); }} />
+                      )}
+                    </TableCell>
+                  ))}
+                    <TableCell className="text-right">
                     <button className="text-red-400 hover:text-red-500" onClick={()=>deletePlayer(p.name)}>
                       <Trash2 className="h-4 w-4" />
                     </button>
