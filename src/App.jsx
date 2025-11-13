@@ -75,65 +75,9 @@ const DEFAULT_BONUS_RULES = [
   {id:"perfect_run",   navn:"Perfekt run (ingen tap)",   poeng:3,  type:"toggle"},
   {id:"player_injured",navn:"Spelar skadet",             poeng:-3, type:"counter"},
 ];
-
-function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
-  return (
-    <div className="space-y-6">
-      <div className="rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
-        <h2 className="text-xl font-bold mb-2">Hei! 🤗 Slik funkar Fantasy</h2>
-        <ol className="list-decimal ml-5 space-y-2">
-          <li><b>Skriv namnet ditt.</b> (Det du vil bli vist som på lista.)</li>
-          <li><b>Vel 3 lag</b> – eitt i kvar “Stage”.</li>
-          <li><b>Samle poeng</b> når laga dine gjer det bra. Flest poeng = vinnar! 🏆</li>
-        </ol>
-      </div>
-
-      <div className="rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
-        <h3 className="text-lg font-semibold mb-2">Korleis får eg poeng?</h3>
-        <p className="opacity-80 mb-2">Dette er dei vanlege reglane (enkelt forklart):</p>
-        <ul className="list-disc ml-5 space-y-1">
-          {baseRules.map(r => (
-            <li key={r.id}>
-              <b>{r.navn}</b>{' '}
-              <span className="opacity-80">
-                {r.type === "counter"
-                  ? `(+${r.poeng} poeng kvar gong)`
-                  : `(+${r.poeng} poeng når dette er på)`}
-              </span>
-            </li>
-          ))}
-          {bonusRules.length > 0 && (
-            <li className="mt-2"><b>Bonusar</b>: Ekstra poeng for spesielle ting (viss aktivert).</li>
-          )}
-        </ul>
-      </div>
-
-      <div className="rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
-        <h3 className="text-lg font-semibold mb-2">Kvar ser eg poenga?</h3>
-        <ul className="list-disc ml-5 space-y-1">
-          <li><b>Leaderboard</b>-fanen viser poeng og plassering.</li>
-          <li><b>Admin</b> (for arrangør) oppdaterer resultat pr lag, og då blir poenga rekna om automatisk.</li>
-        </ul>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onStart}
-          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90"
-        >
-          OK, eg er klar – vel lag!
-        </button>
-        <span className="text-sm opacity-70">Du kan alltid kome tilbake til Intro-fanen.</span>
-      </div>
-    </div>
-  );
-}
-
-
-
 export default function App() {
   // tabs
-  const [tab, setTab] = useState("intro");
+  const [tab, setTab] = useState("pick");
 
   // picks & form state
   const [name, setName] = useLocalStorage("name", "");
@@ -330,12 +274,23 @@ export default function App() {
     return out;
   }, [teamState, baseRules, bonusRules, bonusActive]);
 
+  
   const rows = useMemo(() => {
-    return picks.map(p => ({
-      ...p,
-      points: (teamPoints[p.s1]||0) + (teamPoints[p.s2]||0) + (teamPoints[p.s3]||0),
-    })).sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
-  }, [picks, teamPoints]);
+    const bonusMapForParticipants = Object.fromEntries(bonusRules.map(r => [r.id, { p: Number(r.poeng||0), t: r.type }]));
+    return picks.map(p => {
+      const teamSum = (teamPoints[p.s1]||0) + (teamPoints[p.s2]||0) + (teamPoints[p.s3]||0);
+      let bonusSum = 0;
+      const pb = p.bonus || {};
+      for (const id of Object.keys(pb)) {
+        const def = bonusMapForParticipants[id];
+        if (!def) continue;
+        const v = pb[id];
+        if (def.t === "counter") bonusSum += Number(v||0) * def.p;
+        else bonusSum += (v ? 1 : 0) * def.p;
+      }
+      return { ...p, points: teamSum + bonusSum };
+    }).sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
+  }, [picks, teamPoints, bonusRules]);
 
   // ---------- Firestore helpers for shared users ----------
 async function addOrUpdateUserFirestore(player) {
@@ -364,7 +319,33 @@ async function addOrUpdateUserFirestore(player) {
 }
 
 
-  async function removeUserFromFirestoreByName(nameToRemove) {
+  
+  async function setPlayerBonus(playerName, ruleId, value) {
+    try {
+      const snap = await getDoc(SHARED_REF);
+      const data = snap.exists() ? snap.data() : { users: [] };
+      const users = Array.isArray(data.users) ? data.users : [];
+      const idx = users.findIndex(u => u.name === playerName);
+      if (idx === -1) {
+        console.warn("Fant ikkje bruker:", playerName);
+        return;
+      }
+      const user = users[idx];
+      const newBonus = { ...(user.bonus || {}) };
+      if (value === null || value === undefined || value === "") {
+        delete newBonus[ruleId];
+      } else {
+        newBonus[ruleId] = value;
+      }
+      users[idx] = { ...user, bonus: newBonus };
+      await updateDoc(SHARED_REF, { users, lastUpdated: Date.now() });
+    } catch (e) {
+      console.error("setPlayerBonus feil:", e);
+      alert("Feil ved lagring av bonus - sjekk konsoll.");
+    }
+  }
+
+async function removeUserFromFirestoreByName(nameToRemove) {
     try {
       const snap = await getDoc(SHARED_REF);
       if (!snap.exists()) return;
@@ -450,18 +431,8 @@ function setTeamBonus(team, ruleId, value) {
             <TabsContent value="leaderboard"><LeaderboardTab rows={rows} /></TabsContent>
 
             <TabsContent value="intro">
-  <Card className="mt-4">
-    <CardHeader><CardTitle>Velkommen!</CardTitle></CardHeader>
-    <CardContent>
-      <FriendlyIntro
-        baseRules={baseRules}
-        bonusRules={bonusRules}
-        onStart={() => setTab("pick")}
-      />
-    </CardContent>
-  </Card>
-</TabsContent>
-
+              <IntroTab baseRules={baseRules} bonusRules={bonusRules} />
+            </TabsContent>
 
             <TabsContent value="admin">
               {!isAdmin ? (
@@ -764,7 +735,7 @@ function AdminTab({
               <span>Bonus aktiv?</span>
             </div>
             <div className="flex items-center gap-2">
-  
+  <span className="text-xs opacity-70">{saveStatus}</span>
   <Button
     onClick={async () => {
       try {
@@ -783,7 +754,7 @@ function AdminTab({
   <Button onClick={resetAll} className="bg-secondary text-secondary-foreground">Tilbakestill</Button>
 </div>
 <div>
-
+<span className="text-xs opacity-70">{saveStatus}</span>
 <Button
   onClick={async () => {
     try {
