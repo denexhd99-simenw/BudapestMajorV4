@@ -90,14 +90,13 @@ const DEFAULT_BONUS_RULES = [
   {id:"perfect_run",   navn:"Perfekt run (ingen tap)",   poeng:3,  type:"toggle"},
   {id:"player_injured",navn:"Spelar skadet",             poeng:-3, type:"counter"},
 ];
-<<<<<<< HEAD
+
 export default function App() {
  
   // match-local rule values (for admin match form)
   const matchRuleValues = {};
  // tabs
   const [tab, setTab] = useState("pick");
-=======
 
 function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
   return (
@@ -152,11 +151,11 @@ function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
   );
 }
 
-
 export default function App() {
   // tabs
   const [tab, setTab] = useLocalStorage("activeTab", "intro");
 >>>>>>> 1b56a10b487910c1165a4976570c3a4216552063
+
 
   // picks & form state
   const [name, setName] = useLocalStorage("name", "");
@@ -1069,9 +1068,7 @@ function AdminTab({
                 <TableHead>Stage 1</TableHead>
                 <TableHead>Stage 2</TableHead>
                 <TableHead>Stage 3</TableHead>
-<<<<<<< HEAD
                 <TableHead className="text-right">Slett</TableHead>\n                {bonusRules.map(br => (<TableHead key={br.id}>{br.navn}{br.type === "counter" ? " (#)" : ""}</TableHead>))}
-=======
                 <TableHead className="text-right">Slett</TableHead>
                 {bonusRules.map(br => (<TableHead key={br.id}>{br.navn}{br.type === "counter" ? " (#)" : ""}</TableHead>))}
 >>>>>>> 1b56a10b487910c1165a4976570c3a4216552063
