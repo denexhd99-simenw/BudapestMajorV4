@@ -75,6 +75,7 @@ const DEFAULT_BONUS_RULES = [
   {id:"perfect_run",   navn:"Perfekt run (ingen tap)",   poeng:3,  type:"toggle"},
   {id:"player_injured",navn:"Spelar skadet",             poeng:-3, type:"counter"},
 ];
+
 function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
   return (
     <div className="space-y-6">
@@ -127,9 +128,11 @@ function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
     </div>
   );
 }
-export default function App(){
+
+
+export default function App() {
   // tabs
-  const [tab, setTab] = useState("intro");
+  const [tab, setTab] = useLocalStorage("activeTab", "intro");
 
   // picks & form state
   const [name, setName] = useLocalStorage("name", "");
@@ -146,12 +149,15 @@ export default function App(){
     "teamState",
     Object.fromEntries(ALL_TEAMS.map(t => [t, { base:{}, bonus:{} }]))
   );
- const [teamDirty, setTeamDirty] = useState(false);
-  const [saveStatus, setSaveStatus] = useState("");
+
  // rules (synced)
   const [baseRules, setBaseRules]   = useLocalStorage("baseRules", DEFAULT_BASE_RULES);
   const [bonusRules, setBonusRules] = useLocalStorage("bonusRules", DEFAULT_BONUS_RULES);
   const [bonusActive, setBonusActive] = useLocalStorage("bonusActive", true);
+
+
+  const [teamDirty, setTeamDirty] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
 
   const baseColsArr = baseRules;
   const bonusColsArr = bonusRules;
@@ -323,23 +329,12 @@ export default function App(){
     return out;
   }, [teamState, baseRules, bonusRules, bonusActive]);
 
-  
   const rows = useMemo(() => {
-    const bonusMapForParticipants = Object.fromEntries(bonusRules.map(r => [r.id, { p: Number(r.poeng||0), t: r.type }]));
-    return picks.map(p => {
-      const teamSum = (teamPoints[p.s1]||0) + (teamPoints[p.s2]||0) + (teamPoints[p.s3]||0);
-      let bonusSum = 0;
-      const pb = p.bonus || {};
-      for (const id of Object.keys(pb)) {
-        const def = bonusMapForParticipants[id];
-        if (!def) continue;
-        const v = pb[id];
-        if (def.t === "counter") bonusSum += Number(v||0) * def.p;
-        else bonusSum += (v ? 1 : 0) * def.p;
-      }
-      return { ...p, points: teamSum + bonusSum };
-    }).sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
-  }, [picks, teamPoints, bonusRules]);
+    return picks.map(p => ({
+      ...p,
+      points: (teamPoints[p.s1]||0) + (teamPoints[p.s2]||0) + (teamPoints[p.s3]||0),
+    })).sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
+  }, [picks, teamPoints]);
 
   // ---------- Firestore helpers for shared users ----------
 async function addOrUpdateUserFirestore(player) {
@@ -368,33 +363,7 @@ async function addOrUpdateUserFirestore(player) {
 }
 
 
-  
-  async function setPlayerBonus(playerName, ruleId, value) {
-    try {
-      const snap = await getDoc(SHARED_REF);
-      const data = snap.exists() ? snap.data() : { users: [] };
-      const users = Array.isArray(data.users) ? data.users : [];
-      const idx = users.findIndex(u => u.name === playerName);
-      if (idx === -1) {
-        console.warn("Fant ikkje bruker:", playerName);
-        return;
-      }
-      const user = users[idx];
-      const newBonus = { ...(user.bonus || {}) };
-      if (value === null || value === undefined || value === "") {
-        delete newBonus[ruleId];
-      } else {
-        newBonus[ruleId] = value;
-      }
-      users[idx] = { ...user, bonus: newBonus };
-      await updateDoc(SHARED_REF, { users, lastUpdated: Date.now() });
-    } catch (e) {
-      console.error("setPlayerBonus feil:", e);
-      alert("Feil ved lagring av bonus - sjekk konsoll.");
-    }
-  }
-
-async function removeUserFromFirestoreByName(nameToRemove) {
+  async function removeUserFromFirestoreByName(nameToRemove) {
     try {
       const snap = await getDoc(SHARED_REF);
       if (!snap.exists()) return;
@@ -784,10 +753,7 @@ function AdminTab({
               <span>Bonus aktiv?</span>
             </div>
             <div className="flex items-center gap-2">
-  {typeof saveStatus === "string" && saveStatus ? (
-  <span className="text-xs opacity-70">{saveStatus}</span>
-) : null}
-
+  
   <Button
     onClick={async () => {
       try {
@@ -806,9 +772,6 @@ function AdminTab({
   <Button onClick={resetAll} className="bg-secondary text-secondary-foreground">Tilbakestill</Button>
 </div>
 <div>
-{typeof saveStatus === "string" && saveStatus ? (
-  <span className="text-xs opacity-70">{saveStatus}</span>
-) : null}
 
 <Button
   onClick={async () => {
