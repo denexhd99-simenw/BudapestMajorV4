@@ -1,19 +1,4 @@
-	async function setPlayerBonus(playerName, ruleId, value) {
-    try {
-      const snap = await getDoc(SHARED_REF);
-      const data = snap.exists() ? snap.data() : { users: [] };
-      const users = Array.isArray(data.users) ? data.users : [];
-      const idx = users.findIndex(u => u.name === playerName);
-      if (idx === -1) { console.warn("Fant ikkje bruker:", playerName); return; }
-      const user = users[idx];
-      const newBonus = { ...(user.bonus || {}) };
-      if (value === null || value === undefined || value === "") delete newBonus[ruleId];
-      else newBonus[ruleId] = value;
-      users[idx] = { ...user, bonus: newBonus };
-      await updateDoc(SHARED_REF, { users, lastUpdated: Date.now() });
-    } catch (e) { console.error("setPlayerBonus feil:", e); alert("Feil ved lagring av bonus - sjekk konsoll."); }
-  }
-
+// src/App.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -90,67 +75,9 @@ const DEFAULT_BONUS_RULES = [
   {id:"perfect_run",   navn:"Perfekt run (ingen tap)",   poeng:3,  type:"toggle"},
   {id:"player_injured",navn:"Spelar skadet",             poeng:-3, type:"counter"},
 ];
-
 export default function App() {
- 
-  // match-local rule values (for admin match form)
-  const matchRuleValues = {};
- // tabs
+  // tabs
   const [tab, setTab] = useState("pick");
-
-function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
-  return (
-    <div className="space-y-6">
-      <div className="rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
-        <h2 className="text-xl font-bold mb-2">Hei! 🤗 Slik funkar Fantasy</h2>
-        <ol className="list-decimal ml-5 space-y-2">
-          <li><b>Skriv namnet ditt.</b> (Det du vil bli vist som på lista.)</li>
-          <li><b>Vel 3 lag</b> – eitt i kvar “Stage”.</li>
-          <li><b>Samle poeng</b> når laga dine gjer det bra. Flest poeng = vinnar! 🏆</li>
-        </ol>
-      </div>
-
-      <div className="rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
-        <h3 className="text-lg font-semibold mb-2">Korleis får eg poeng?</h3>
-        <p className="opacity-80 mb-2">Dette er dei vanlege reglane (enkelt forklart):</p>
-        <ul className="list-disc ml-5 space-y-1">
-          {baseRules.map(r => (
-            <li key={r.id}>
-              <b>{r.navn}</b>{' '}
-              <span className="opacity-80">
-                {r.type === "counter"
-                  ? `(+${r.poeng} poeng kvar gong)`
-                  : `(+${r.poeng} poeng når dette er på)`}
-              </span>
-            </li>
-          ))}
-          {bonusRules.length > 0 && (
-            <li className="mt-2"><b>Bonusar</b>: Ekstra poeng for spesielle ting (viss aktivert).</li>
-          )}
-        </ul>
-      </div>
-
-      <div className="rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
-        <h3 className="text-lg font-semibold mb-2">Kvar ser eg poenga?</h3>
-        <ul className="list-disc ml-5 space-y-1">
-          <li><b>Leaderboard</b>-fanen viser poeng og plassering.</li>
-          <li><b>Admin</b> (for arrangør) oppdaterer resultat pr lag, og då blir poenga rekna om automatisk.</li>
-        </ul>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onStart}
-          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90"
-        >
-          OK, eg er klar – vel lag!
-        </button>
-        <span className="text-sm opacity-70">Du kan alltid kome tilbake til Intro-fanen.</span>
-      </div>
-    </div>
-  );
-}
-
 
   // picks & form state
   const [name, setName] = useLocalStorage("name", "");
@@ -255,7 +182,7 @@ function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
           const users = snap.users;
           setPicks(users.map(u => {
             const teams = Array.isArray(u.stageTeams) ? u.stageTeams : [];
-            return { name: u.name || "", s1: teams[0] || "", s2: teams[1] || "", s3: teams[2] || "", bonus: u.bonus || {} };
+            return { name: u.name || "", s1: teams[0] || "", s2: teams[1] || "", s3: teams[2] || "" };
           }));
         }
       } catch (e) {
@@ -268,7 +195,7 @@ function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
           const users = Array.isArray(data.users) ? data.users : [];
           setPicks(users.map(u => {
             const teams = Array.isArray(u.stageTeams) ? u.stageTeams : [];
-            return { name: u.name || "", s1: teams[0] || "", s2: teams[1] || "", s3: teams[2] || "", bonus: u.bonus || {} };
+            return { name: u.name || "", s1: teams[0] || "", s2: teams[1] || "", s3: teams[2] || "" };
           }));
         }, (err) => console.error("subscribeShared error:", err));
       } catch (e) {}
@@ -347,24 +274,12 @@ function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
     return out;
   }, [teamState, baseRules, bonusRules, bonusActive]);
 
-  
   const rows = useMemo(() => {
-    const bonusMapForParticipants = Object.fromEntries((bonusRules||[]).map(r => [r.id, { p: Number(r.poeng||0), t: r.type }]));
-    return (picks||[]).map(p => {
-      const teamSum = (teamPoints[p.s1]||0) + (teamPoints[p.s2]||0) + (teamPoints[p.s3]||0);
-      let bonusSum = 0;
-      const pb = p.bonus || {};
-      for (const id of Object.keys(pb)) {
-        const def = bonusMapForParticipants[id];
-        if (!def) continue;
-        const v = pb[id];
-        if (def.t === 'counter') bonusSum += Number(v||0) * def.p;
-        else bonusSum += (v ? 1 : 0) * def.p;
-      }
-      return { ...p, points: teamSum + bonusSum };
-    }).sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
-  }, [picks, teamPoints, bonusRules]);
-
+    return picks.map(p => ({
+      ...p,
+      points: (teamPoints[p.s1]||0) + (teamPoints[p.s2]||0) + (teamPoints[p.s3]||0),
+    })).sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
+  }, [picks, teamPoints]);
 
   // ---------- Firestore helpers for shared users ----------
 async function addOrUpdateUserFirestore(player) {
@@ -478,42 +393,9 @@ function setTeamBonus(team, ruleId, value) {
 
             <TabsContent value="leaderboard"><LeaderboardTab rows={rows} /></TabsContent>
 
-            
-<TabsContent value="intro">
-  <Card className="mt-4">
-    <CardHeader><CardTitle>Velkommen!</CardTitle></CardHeader>
-    <CardContent>
-      <FriendlyIntro baseRules={baseRules} bonusRules={bonusRules} onStart={() => setTab("pick")} />
-      <div className="mt-6 rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
-        <h3 className="text-lg font-semibold mb-2">Poengoversikt</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 rounded-md bg-[#0b1a2a]">
-            <h4 className="font-semibold mb-2">Grunnreglar</h4>
-            <ul className="list-disc ml-5 space-y-1">
-              {Array.from([...(baseRules||[]), ...(bonusRules||[])].filter(Boolean)).map(r => (
-                <li key={r.id}><b>{r.navn}</b>{' '}<span className="opacity-80">{r.type === 'counter' ? `(+${r.poeng} poeng kvar gong)` : `(+${r.poeng} poeng når dette er på)`}</span></li>
-              ))}
-            </ul>
-          </div>
-          <div className="p-4 rounded-md bg-[#0b1a2a]">
-            <h4 className="font-semibold mb-2">Bonusreglar</h4>
-            <p className="opacity-80">Kun éi aktiv bonusregel for personlege straffar:</p>
-            <ul className="list-disc ml-5">
-              { (bonusRules||[]).filter(b=>b.namn==='spybot' || b.navn==='spybot' || b.navn && b.navn.toLowerCase().includes('spybot')).length === 0 ? (
-                <li>Spybot — <b>-3 poeng</b> (Teller)</li>
-              ) : (
-                (bonusRules||[]).filter(b=>b.navn && b.navn.toLowerCase().includes('spybot')).map(b=>(
-                  <li key={b.id}><b>{b.navn}</b> — <b>{b.poeng}</b> poeng ({b.type === 'counter' ? 'Teller' : 'Av/På'})</li>
-                ))
-              )}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-</TabsContent>
-
+            <TabsContent value="intro">
+              <IntroTab baseRules={baseRules} bonusRules={bonusRules} />
+            </TabsContent>
 
             <TabsContent value="admin">
               {!isAdmin ? (
@@ -1063,10 +945,7 @@ function AdminTab({
                 <TableHead>Stage 1</TableHead>
                 <TableHead>Stage 2</TableHead>
                 <TableHead>Stage 3</TableHead>
-                <TableHead className="text-right">Slett</TableHead>\n                {bonusRules.map(br => (<TableHead key={br.id}>{br.navn}{br.type === "counter" ? " (#)" : ""}</TableHead>))}
                 <TableHead className="text-right">Slett</TableHead>
-                {bonusRules.map(br => (<TableHead key={br.id}>{br.navn}{br.type === "counter" ? " (#)" : ""}</TableHead>))}
->>>>>>> 1b56a10b487910c1165a4976570c3a4216552063
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1076,16 +955,7 @@ function AdminTab({
                   <TableCell>{p.s1}</TableCell>
                   <TableCell>{p.s2}</TableCell>
                   <TableCell>{p.s3}</TableCell>
-                  {bonusRules.map(br => (
-                    <TableCell key={br.id}>
-                      {br.type === 'counter' ? (
-                        <Input type="number" className="w-20" value={p.bonus?.[br.id] ?? 0} onChange={async (e) => { const v = Number(e.target.value||0); await setPlayerBonus(p.name, br.id, v); }} />
-                      ) : (
-                        <input type="checkbox" checked={!!p.bonus?.[br.id]} onChange={async (e) => { await setPlayerBonus(p.name, br.id, e.target.checked); }} />
-                      )}
-                    </TableCell>
-                  ))}
-                    <TableCell className="text-right">
+                  <TableCell className="text-right">
                     <button className="text-red-400 hover:text-red-500" onClick={()=>deletePlayer(p.name)}>
                       <Trash2 className="h-4 w-4" />
                     </button>
