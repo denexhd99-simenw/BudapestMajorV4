@@ -14,7 +14,6 @@
     } catch (e) { console.error("setPlayerBonus feil:", e); alert("Feil ved lagring av bonus - sjekk konsoll."); }
   }
 
-/ src/App.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
