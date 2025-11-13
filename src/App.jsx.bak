@@ -93,10 +93,7 @@ const DEFAULT_BONUS_RULES = [
   {id:"player_injured",navn:"Spelar skadet",             poeng:-3, type:"counter"},
 ];
 export default function App() {
- 
-  // match-local rule values (for admin match form)
-  const matchRuleValues = {};
- // tabs
+  // tabs
   const [tab, setTab] = useState("pick");
 
   // picks & form state
@@ -425,42 +422,9 @@ function setTeamBonus(team, ruleId, value) {
 
             <TabsContent value="leaderboard"><LeaderboardTab rows={rows} /></TabsContent>
 
-            
-<TabsContent value="intro">
-  <Card className="mt-4">
-    <CardHeader><CardTitle>Velkommen!</CardTitle></CardHeader>
-    <CardContent>
-      <FriendlyIntro baseRules={baseRules} bonusRules={bonusRules} onStart={() => setTab("pick")} />
-      <div className="mt-6 rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
-        <h3 className="text-lg font-semibold mb-2">Poengoversikt</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 rounded-md bg-[#0b1a2a]">
-            <h4 className="font-semibold mb-2">Grunnreglar</h4>
-            <ul className="list-disc ml-5 space-y-1">
-              {Array.from([...(baseRules||[]), ...(bonusRules||[])].filter(Boolean)).map(r => (
-                <li key={r.id}><b>{r.navn}</b>{' '}<span className="opacity-80">{r.type === 'counter' ? `(+${r.poeng} poeng kvar gong)` : `(+${r.poeng} poeng når dette er på)`}</span></li>
-              ))}
-            </ul>
-          </div>
-          <div className="p-4 rounded-md bg-[#0b1a2a]">
-            <h4 className="font-semibold mb-2">Bonusreglar</h4>
-            <p className="opacity-80">Kun éi aktiv bonusregel for personlege straffar:</p>
-            <ul className="list-disc ml-5">
-              { (bonusRules||[]).filter(b=>b.namn==='spybot' || b.navn==='spybot' || b.navn && b.navn.toLowerCase().includes('spybot')).length === 0 ? (
-                <li>Spybot — <b>-3 poeng</b> (Teller)</li>
-              ) : (
-                (bonusRules||[]).filter(b=>b.navn && b.navn.toLowerCase().includes('spybot')).map(b=>(
-                  <li key={b.id}><b>{b.navn}</b> — <b>{b.poeng}</b> poeng ({b.type === 'counter' ? 'Teller' : 'Av/På'})</li>
-                ))
-              )}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-</TabsContent>
-
+            <TabsContent value="intro">
+              <IntroTab baseRules={baseRules} bonusRules={bonusRules} />
+            </TabsContent>
 
             <TabsContent value="admin">
               {!isAdmin ? (
@@ -1020,16 +984,7 @@ function AdminTab({
                   <TableCell>{p.s1}</TableCell>
                   <TableCell>{p.s2}</TableCell>
                   <TableCell>{p.s3}</TableCell>
-                  {bonusRules.map(br => (
-                    <TableCell key={br.id}>
-                      {br.type === 'counter' ? (
-                        <Input type="number" className="w-20" value={p.bonus?.[br.id] ?? 0} onChange={async (e) => { const v = Number(e.target.value||0); await setPlayerBonus(p.name, br.id, v); }} />
-                      ) : (
-                        <input type="checkbox" checked={!!p.bonus?.[br.id]} onChange={async (e) => { await setPlayerBonus(p.name, br.id, e.target.checked); }} />
-                      )}
-                    </TableCell>
-                  ))}
-                    <TableCell className="text-right">
+                  <TableCell className="text-right">
                     <button className="text-red-400 hover:text-red-500" onClick={()=>deletePlayer(p.name)}>
                       <Trash2 className="h-4 w-4" />
                     </button>
