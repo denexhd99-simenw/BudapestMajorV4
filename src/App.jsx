@@ -151,11 +151,6 @@ function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
   );
 }
 
-export default function App() {
-  // tabs
-  const [tab, setTab] = useLocalStorage("activeTab", "intro");
->>>>>>> 1b56a10b487910c1165a4976570c3a4216552063
-
 
   // picks & form state
   const [name, setName] = useLocalStorage("name", "");
