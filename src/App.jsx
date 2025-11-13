@@ -237,7 +237,7 @@ export default function App() {
           const users = snap.users;
           setPicks(users.map(u => {
             const teams = Array.isArray(u.stageTeams) ? u.stageTeams : [];
-            return { name: u.name || "", s1: teams[0] || "", s2: teams[1] || "", s3: teams[2] || "" };
+            return { name: u.name || "", s1: teams[0] || "", s2: teams[1] || "", s3: teams[2] || "", bonus: u.bonus || {} };
           }));
         }
       } catch (e) {
@@ -250,7 +250,7 @@ export default function App() {
           const users = Array.isArray(data.users) ? data.users : [];
           setPicks(users.map(u => {
             const teams = Array.isArray(u.stageTeams) ? u.stageTeams : [];
-            return { name: u.name || "", s1: teams[0] || "", s2: teams[1] || "", s3: teams[2] || "" };
+            return { name: u.name || "", s1: teams[0] || "", s2: teams[1] || "", s3: teams[2] || "", bonus: u.bonus || {} };
           }));
         }, (err) => console.error("subscribeShared error:", err));
       } catch (e) {}
@@ -329,12 +329,24 @@ export default function App() {
     return out;
   }, [teamState, baseRules, bonusRules, bonusActive]);
 
+  
   const rows = useMemo(() => {
-    return picks.map(p => ({
-      ...p,
-      points: (teamPoints[p.s1]||0) + (teamPoints[p.s2]||0) + (teamPoints[p.s3]||0),
-    })).sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
-  }, [picks, teamPoints]);
+    const bonusMapForParticipants = Object.fromEntries((bonusRules||[]).map(r => [r.id, { p: Number(r.poeng||0), t: r.type }]));
+    return (picks||[]).map(p => {
+      const teamSum = (teamPoints[p.s1]||0) + (teamPoints[p.s2]||0) + (teamPoints[p.s3]||0);
+      let bonusSum = 0;
+      const pb = p.bonus || {};
+      for (const id of Object.keys(pb)) {
+        const def = bonusMapForParticipants[id];
+        if (!def) continue;
+        const v = pb[id];
+        if (def.t === 'counter') bonusSum += Number(v||0) * def.p;
+        else bonusSum += (v ? 1 : 0) * def.p;
+      }
+      return { ...p, points: teamSum + bonusSum };
+    }).sort((a,b)=> b.points - a.points || a.name.localeCompare(b.name));
+  }, [picks, teamPoints, bonusRules]);
+
 
   // ---------- Firestore helpers for shared users ----------
 async function addOrUpdateUserFirestore(player) {
@@ -363,7 +375,33 @@ async function addOrUpdateUserFirestore(player) {
 }
 
 
-  async function removeUserFromFirestoreByName(nameToRemove) {
+  
+  async function setPlayerBonus(playerName, ruleId, value) {
+    try {
+      const snap = await getDoc(SHARED_REF);
+      const data = snap.exists() ? snap.data() : { users: [] };
+      const users = Array.isArray(data.users) ? data.users : [];
+      const idx = users.findIndex(u => u.name === playerName);
+      if (idx === -1) {
+        console.warn("Fant ikkje bruker:", playerName);
+        return;
+      }
+      const user = users[idx];
+      const newBonus = { ...(user.bonus || {}) };
+      if (value === null || value === undefined || value === "") {
+        delete newBonus[ruleId];
+      } else {
+        newBonus[ruleId] = value;
+      }
+      users[idx] = { ...user, bonus: newBonus };
+      await updateDoc(SHARED_REF, { users, lastUpdated: Date.now() });
+    } catch (e) {
+      console.error("setPlayerBonus feil:", e);
+      alert("Feil ved lagring av bonus - sjekk konsoll.");
+    }
+  }
+
+async function removeUserFromFirestoreByName(nameToRemove) {
     try {
       const snap = await getDoc(SHARED_REF);
       if (!snap.exists()) return;
@@ -1001,6 +1039,7 @@ function AdminTab({
                 <TableHead>Stage 2</TableHead>
                 <TableHead>Stage 3</TableHead>
                 <TableHead className="text-right">Slett</TableHead>
+                {bonusRules.map(br => (<TableHead key={br.id}>{br.navn}{br.type === "counter" ? " (#)" : ""}</TableHead>))}
               </TableRow>
             </TableHeader>
             <TableBody>
