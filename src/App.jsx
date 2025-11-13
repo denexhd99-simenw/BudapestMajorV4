@@ -1,5 +1,4 @@
-/
-  async function setPlayerBonus(playerName, ruleId, value) {
+	async function setPlayerBonus(playerName, ruleId, value) {
     try {
       const snap = await getDoc(SHARED_REF);
       const data = snap.exists() ? snap.data() : { users: [] };
