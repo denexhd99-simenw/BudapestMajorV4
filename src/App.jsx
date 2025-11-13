@@ -75,9 +75,61 @@ const DEFAULT_BONUS_RULES = [
   {id:"perfect_run",   navn:"Perfekt run (ingen tap)",   poeng:3,  type:"toggle"},
   {id:"player_injured",navn:"Spelar skadet",             poeng:-3, type:"counter"},
 ];
-export default function App() {
+function FriendlyIntro({ baseRules = [], bonusRules = [], onStart }) {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
+        <h2 className="text-xl font-bold mb-2">Hei! 🤗 Slik funkar Fantasy</h2>
+        <ol className="list-decimal ml-5 space-y-2">
+          <li><b>Skriv namnet ditt.</b> (Det du vil bli vist som på lista.)</li>
+          <li><b>Vel 3 lag</b> – eitt i kvar “Stage”.</li>
+          <li><b>Samle poeng</b> når laga dine gjer det bra. Flest poeng = vinnar! 🏆</li>
+        </ol>
+      </div>
+
+      <div className="rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
+        <h3 className="text-lg font-semibold mb-2">Korleis får eg poeng?</h3>
+        <p className="opacity-80 mb-2">Dette er dei vanlege reglane (enkelt forklart):</p>
+        <ul className="list-disc ml-5 space-y-1">
+          {baseRules.map(r => (
+            <li key={r.id}>
+              <b>{r.navn}</b>{' '}
+              <span className="opacity-80">
+                {r.type === "counter"
+                  ? `(+${r.poeng} poeng kvar gong)`
+                  : `(+${r.poeng} poeng når dette er på)`}
+              </span>
+            </li>
+          ))}
+          {bonusRules.length > 0 && (
+            <li className="mt-2"><b>Bonusar</b>: Ekstra poeng for spesielle ting (viss aktivert).</li>
+          )}
+        </ul>
+      </div>
+
+      <div className="rounded-2xl p-5 bg-[#0f1b31] ring-1 ring-white/10">
+        <h3 className="text-lg font-semibold mb-2">Kvar ser eg poenga?</h3>
+        <ul className="list-disc ml-5 space-y-1">
+          <li><b>Leaderboard</b>-fanen viser poeng og plassering.</li>
+          <li><b>Admin</b> (for arrangør) oppdaterer resultat pr lag, og då blir poenga rekna om automatisk.</li>
+        </ul>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onStart}
+          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90"
+        >
+          OK, eg er klar – vel lag!
+        </button>
+        <span className="text-sm opacity-70">Du kan alltid kome tilbake til Intro-fanen.</span>
+      </div>
+    </div>
+  );
+}
+export default function App(){
   // tabs
-  const [tab, setTab] = useState("pick");
+  const [tab, setTab] = useState("intro");
 
   // picks & form state
   const [name, setName] = useLocalStorage("name", "");
@@ -94,15 +146,12 @@ export default function App() {
     "teamState",
     Object.fromEntries(ALL_TEAMS.map(t => [t, { base:{}, bonus:{} }]))
   );
-
+ const [teamDirty, setTeamDirty] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
  // rules (synced)
   const [baseRules, setBaseRules]   = useLocalStorage("baseRules", DEFAULT_BASE_RULES);
   const [bonusRules, setBonusRules] = useLocalStorage("bonusRules", DEFAULT_BONUS_RULES);
   const [bonusActive, setBonusActive] = useLocalStorage("bonusActive", true);
-
-
-  const [teamDirty, setTeamDirty] = useState(false);
-  const [saveStatus, setSaveStatus] = useState("");
 
   const baseColsArr = baseRules;
   const bonusColsArr = bonusRules;
@@ -735,7 +784,10 @@ function AdminTab({
               <span>Bonus aktiv?</span>
             </div>
             <div className="flex items-center gap-2">
+  {typeof saveStatus === "string" && saveStatus ? (
   <span className="text-xs opacity-70">{saveStatus}</span>
+) : null}
+
   <Button
     onClick={async () => {
       try {
@@ -754,7 +806,10 @@ function AdminTab({
   <Button onClick={resetAll} className="bg-secondary text-secondary-foreground">Tilbakestill</Button>
 </div>
 <div>
-<span className="text-xs opacity-70">{saveStatus}</span>
+{typeof saveStatus === "string" && saveStatus ? (
+  <span className="text-xs opacity-70">{saveStatus}</span>
+) : null}
+
 <Button
   onClick={async () => {
     try {
