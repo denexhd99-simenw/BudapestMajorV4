@@ -71,4 +71,3 @@ export function subscribeMatches(cb, onError) {
 
 // Exports
 export { SHARED_REF, MATCHES_COL };
-export const SHARED_REF = { /* placeholder for your Firestore ref */ };
